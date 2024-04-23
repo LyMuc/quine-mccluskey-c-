@@ -1,0 +1,236 @@
+#include<bits/stdc++.h>
+using namespace std;
+#define MAX 2000
+#define number_of_queues 15
+
+vector<int> so_thap_phan_ban_dau;
+vector<string> a[number_of_queues];
+int head[number_of_queues]={0};
+int check[number_of_queues][MAX]={0};
+int so_bien;
+vector<string> ans;
+
+vector<int> chi_so[100];
+int kiemtra[1025]={0};
+vector<string> final;
+
+void chuyen_nhi_phan(int n)
+{
+    string s; int dem_1=0;
+    for (int i=0; i<so_bien; i++)
+    {
+        if (n%2==0) s+='0'; 
+        else 
+        {
+            s+='1'; dem_1++;
+        }
+        n/=2;
+    }
+    reverse(s.begin(), s.end());
+    a[dem_1].push_back(s);
+}
+
+int so_sanh(string s1, string s2, int target)
+{
+    int differ=0;
+    int length=s1.length();
+    string s;
+    for (int i=0; i<length; i++)
+    {
+        if (s1[i]!=s2[i])
+        {
+            differ++;
+            if (differ==2) return(0);
+            s+='-';
+        }
+        else s+=s1[i];
+    }
+    a[target].push_back(s);
+    return(1);
+}
+
+void xuly()
+{
+    while(1)
+    {
+        int flag=0; 
+        for (int i=0; i<=so_bien; i++)
+        {
+            int luu=a[i].size()-head[i];
+            int save=a[i].size();
+            int save2=a[i+1].size();
+            if(a[i].size()-head[i]>0 && a[i+1].size()-head[i+1]>0)
+            {
+                for(int j=head[i]; j<save; j++) //baihoc
+                {
+                    for(int k=head[i+1]; k<save2; k++)
+                    {
+                        int d=so_sanh(a[i][j], a[i+1][k],i);
+                        if (d==1) 
+                        {
+                            flag=1; //Van co the gop
+                            check[i][j]=1; check[i+1][k]=1; //Da duoc gop
+                        }
+                    }
+                }
+            }
+            head[i]+=luu; //baihoc
+        }
+        if (flag==0) break; 
+    }
+    for (int i=0; i<so_bien; i++)
+    {
+        for(int j=0; j<a[i].size(); j++)
+        {
+            if(check[i][j]==0)
+            {
+                int ok=0;
+                for(int k=0; k<ans.size(); k++)
+                {
+                    if (ans[k]==a[i][j]) ok=1;
+                }
+                if (ok==0) ans.push_back(a[i][j]);
+            }
+        }
+    }
+}
+
+int binary[1025];
+vector<string> xau_nhi_phan;
+void gen_xau_nhi_phan(int bit_1, int k, int dem)
+{
+    // Het ham nay vecto string xau_nhi_phan se gom tat ca cac xau nhi phan do dai la do_dai
+    if (k==ans.size()) 
+        {
+            if(dem==bit_1)
+            {
+                string tmp;
+                for (int j=0; j<ans.size(); j++) 
+                {
+                    if(binary[j]==0) tmp+='0'; else tmp+='1';
+                }
+                xau_nhi_phan.push_back(tmp); //Luu tat ca xau nhi phan do dai ans.size() co dung ? bit 1
+            }
+        }
+    else
+    {
+        binary[k]=0;
+        gen_xau_nhi_phan(bit_1, k+1, dem);
+        if (dem<bit_1)
+        {
+            binary[k]=1;
+            gen_xau_nhi_phan(bit_1, k+1, dem+1);
+        }
+    }
+}
+
+void backtrack(string s, int idx, int k)
+{
+    if (k==so_bien)
+    {
+        int n=0; int so_mu=k-1;
+        for (int i=0; i<so_bien; i++)
+        {
+            if(s[i]=='1') n+=round(pow(2,so_mu));
+            so_mu--;
+        }
+        chi_so[idx].push_back(n);
+    }
+    else
+    {
+        if (s[k]=='0'||s[k]=='1') backtrack(s,idx,k+1);
+        if (s[k]=='-')
+        {
+            s[k]='0'; backtrack(s,idx, k+1);
+            s[k]='1'; backtrack(s,idx, k+1);
+        }
+    }
+}
+
+void finalize()
+{
+    for(int i=0; i<ans.size(); i++)
+    {
+        backtrack(ans[i], i, 0);
+    }
+    for(int i=1; i<=ans.size(); i++)
+    {
+        string winner;
+        xau_nhi_phan.clear();
+        gen_xau_nhi_phan(i,0,0); 
+        for(int j=0; j<xau_nhi_phan.size(); j++)
+        {
+            int super_ok=0;
+            for(int k=0; k<1025; k++) kiemtra[k]=0;
+            for(int k=0; k<xau_nhi_phan[j].size(); k++)
+            {
+                if(xau_nhi_phan[j][k]=='1')
+                {
+                    for(int l=0; l<chi_so[k].size(); l++) kiemtra [ chi_so[k][l] ]=1;
+                }
+            }
+            for(int n=0; n<so_thap_phan_ban_dau.size(); n++)
+            {
+                if (kiemtra[ so_thap_phan_ban_dau[n] ]==0) { super_ok=1; break;}
+            }
+            if (super_ok==0) 
+            {
+                winner=xau_nhi_phan[j];
+                break;
+            }
+        }
+        if(winner.size()>0)
+        {
+            for (int j=0; j<winner.size(); j++)
+            {
+                if(winner[j]=='1') final.push_back(ans[j]);
+            }
+            break;
+        }
+    }
+}
+
+void print()
+{
+    char bit1[10]={'A','B','C','D','E','F','G','H','I','J'};
+    int i;
+    for(i=0; i<final.size()-1; i++)
+    {
+        for(int j=0; j<final[i].size(); j++)
+        {
+            if (final[i][j]=='1') cout<<bit1[j];
+            if (final[i][j]=='0') cout<<bit1[j]<<"!";
+        }
+        cout<<"+";
+    }
+    for(int j=0; j<final[i].size(); j++)
+    {
+        if (final[i][j]=='1') cout<<bit1[j];
+        if (final[i][j]=='0') cout<<bit1[j]<<"!";
+    }
+}
+
+void input() {
+    cin >> so_bien;
+    cin.ignore();
+    string line;
+    getline(cin, line);
+    istringstream iss(line);
+    string token;
+    while (getline(iss, token, ',')) {
+        so_thap_phan_ban_dau.push_back(atoi(token.c_str()));
+        chuyen_nhi_phan(atoi(token.c_str()));
+    }
+}
+
+int main()
+{
+    // test mau
+    //4
+    //10,11,12,13,14,15
+    input();
+    xuly();
+    finalize();
+    print();
+    return 0;
+}
